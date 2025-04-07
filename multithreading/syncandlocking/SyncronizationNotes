@@ -236,6 +236,8 @@ b) 	list.add(value2);
    }
 Lets assume this execution sequence (1)(a)(2)(b) in this case both threads will see that list size is 4 and is less than 5. Hence both will add an element into the list, which makes the list size as 6 violating the condition. You can see the issue is not resolved even with both size() and add() being synchronized methods.
 
+Synchronized methods only protect the method's execution but not the atomicity of the check-then-act sequence.
+
 Solution -
 You should apply thread synchronization at operation level with the help of synchronized block. i.e.
 
@@ -258,3 +260,39 @@ Now consider the execution sequence (1)(a)(2)(3)(b)(c)
 You can see that list object is locked by Thread1 and hence even when the control switched to Thread2 it can not proceed as the lock is with Thread1. And Thread1 will add the element where as Thread2 will fail.
 
 So when it comes to synchronizing operations synchronized blocks are always better choice over synchronized methods.
+
+
+2. **Step 2: Lock-Based Solution**
+ - Create a class `SafeListWithLock` that manages the list.
+ - Use a `ReentrantLock` to control access to the list.
+ - Use `lock()` and `unlock()` methods to protect the check-then-act sequence.
+ - Inside the lock, check the list size and add an element if the size is less than 5.
+
+  - ```java
+    import java.util.concurrent.locks.Lock;
+    import java.util.concurrent.locks.ReentrantLock;
+
+    class SafeListWithLock {
+        private List<Integer> list = new ArrayList<>();
+        private Lock lock = new ReentrantLock();
+
+        public void addElement(int element) {
+            lock.lock();
+            try {
+                if (list.size() < 5) {
+                    list.add(element);
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        public int size() {
+            lock.lock();
+            try {
+                return list.size();
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
